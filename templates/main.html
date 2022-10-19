@@ -9,10 +9,8 @@
     </head>
     <body>
         <div>
-            <div class="fsm_container"></div>
-            <div class="table">
-                {{ populate_table() | safe }}
-            </div>
+            <div class="fsm_container">{{ populate_diagram() | safe }}</div>
+            <div class="table">{{ populate_table() | safe }}</div>
         </div>
 <!--        <div id="f1">-->
 <!--            <p>Enter Name:</p>-->

@@ -11,6 +11,14 @@ div.fsm_container {
     border: 2px solid black;
     margin: 4px;
 }
+div.fsm_container text {
+    font-size: 18px;
+    font-weight: bold;
+    text-anchor: middle;
+}
+div.fsm_container circle {
+    fill: dodgerblue;
+}
 
 div.table {
     display: inline-block;

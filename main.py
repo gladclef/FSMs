@@ -81,6 +81,36 @@ def populate_table(table_vals:list[list[str]] = None) -> str:
 
     return ret
 
+def populate_diagram(table_vals:list[list[str]] = None) -> str:
+    table_vals, states, transitions, transition_map = parse_table(table_vals)
+
+    # get some dimensions
+    r1, r2 = 40, 200
+    size = r2*2 + r1*2 + 20*2
+    center = size / 2
+    angle = 2*math.pi / len(states)
+
+    # prep
+    ret = f"<svg width='{size}' height='{size}'>"
+
+    # draw some circles!
+    state_pos = {}
+    for state_idx in range(len(states)):
+        state = states[state_idx]
+        x = center + r2 * math.sin(angle * state_idx)
+        y = center + r2 * math.cos(angle * state_idx)
+        state_pos[state] = [x, y]
+        ret += f"<circle cx='{x}' cy='{y}' r='{r1}' />"
+
+    # add some text
+    for state_idx in range(len(states)):
+        state = states[state_idx]
+        x, y = state_pos[state]
+        ret += f"<text x='{x}' y='{y+5}'>{state}</text>"
+
+    ret += "</svg>"
+    return ret
+
 @app.route('/update_table', methods=['POST'])
 def update_table():
     if request.method == 'POST':
@@ -91,7 +121,7 @@ def update_table():
 @app.route('/', methods=['GET'])
 def login():
     if request.method == 'GET':
-        return render_template('main.html', populate_table=populate_table)
+        return render_template('main.html', populate_table=populate_table, populate_diagram=populate_diagram)
 
 if __name__ == '__main__':
     app.run(debug=True)
