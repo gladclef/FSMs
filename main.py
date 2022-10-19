@@ -1,7 +1,8 @@
 import math
-
 from flask import Flask, redirect, url_for, request, render_template, jsonify
+
 from lib.css import *
+import lib.geometry as geo
 
 app = Flask(__name__)
 
@@ -95,14 +96,48 @@ def populate_diagram(table_vals:list[list[str]] = None) -> str:
 
     # draw some circles!
     state_pos = {}
+    state_intersections = {}
     for state_idx in range(len(states)):
         state = states[state_idx]
-        x = center + r2 * math.sin(angle * state_idx)
-        y = center + r2 * math.cos(angle * state_idx)
+        x, y = geo.rad_to_cart(angle * state_idx, r2, center)
         state_pos[state] = [x, y]
         ret += f"<circle cx='{x}' cy='{y}' r='{r1}' />"
+        i1, i2 = geo.circle_intersections([center, center, r2], [x, y, r1])
+        i3, i4 = geo.circle_vector_intersections([center, center, r2], angle*state_idx, r2-r1, r2+r1)
+        state_intersections[state] = [i1, i2, i3, i4] # left, right, inside, outside
 
-    # add some text
+    # draw some transitions!
+    for state1 in states:
+        try:
+            state1_idx = states.index(state1)
+        except ValueError:
+            continue
+        for transition, state2 in transition_map[state1].items():
+            try:
+                state2_idx = states.index(state2)
+            except ValueError:
+                continue
+
+            if (state1_idx == state2_idx):
+                # self-transition
+                pass
+            if (state2_idx == state1_idx+1) or (state2_idx == 0 and state1_idx == len(states)):
+                # draw a clockwise arc
+                xy1 = state_intersections[state1][1]
+                xy2 = state_intersections[state2][0]
+                xdist = xy2[0] - xy1[0]
+                ydist = xy2[1] - xy1[1]
+                middle = geo.circle_vector_intersections([center, center, r2], angle*(state1_idx+0.5), r2)[0]
+                ret += f"<path d='M {xy1[0]} {xy1[1]} c {middle[0]} {middle[1]} {xdist} {ydist}' />"
+                pass
+            elif (state1_idx == state2_idx+1) or (state1_idx == 0 and state2_idx == len(states)):
+                # draw a counter-clockwise arc
+                pass
+            else:
+                # draw an inside arc
+                pass
+
+    # add some text!
     for state_idx in range(len(states)):
         state = states[state_idx]
         x, y = state_pos[state]
