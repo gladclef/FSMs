@@ -19,6 +19,10 @@ div.fsm_container text {
 div.fsm_container circle {
     fill: dodgerblue;
 }
+div.fsm_container path {
+    stroke: black;
+    fill: transparent;
+}
 
 div.table {
     display: inline-block;

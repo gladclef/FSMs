@@ -123,12 +123,20 @@ def populate_diagram(table_vals:list[list[str]] = None) -> str:
                 pass
             if (state2_idx == state1_idx+1) or (state2_idx == 0 and state1_idx == len(states)):
                 # draw a clockwise arc
+                p1 = state_pos[state1]
+                p2 = state_pos[state2]
                 xy1 = state_intersections[state1][1]
                 xy2 = state_intersections[state2][0]
-                xdist = xy2[0] - xy1[0]
-                ydist = xy2[1] - xy1[1]
-                middle = geo.circle_vector_intersections([center, center, r2], angle*(state1_idx+0.5), r2)[0]
-                ret += f"<path d='M {xy1[0]} {xy1[1]} c {middle[0]} {middle[1]} {xdist} {ydist}' />"
+                radians1, _ = geo.cart_to_rad([center, center], xy1)
+                radians2, _ = geo.cart_to_rad([center, center], xy2)
+                # middle = geo.circle_vector_intersections([center, center, r2], angle*(state1_idx+0.5), r2*2)[0]
+                # ret += f"<path d='M {xy1[0]} {xy1[1]} Q {middle[0]} {middle[1]} {xy2[0]} {xy2[1]}' />"
+                radians1, _ = geo.cart_to_rad(p1, xy1)
+                radians2, _ = geo.cart_to_rad(p2, xy2)
+                m1 = geo.circle_vector_intersections([p1[0], p1[1], r1], radians1, r2*2)[0]
+                m2 = geo.circle_vector_intersections([p2[0], p2[1], r1], radians2, r2*2)[0]
+                print(f"{state1}: {p1}{xy1}/{radians1}/{m1}, {state2}: {p2}{xy2}/{radians2}/{m2}")
+                ret += f"<path d='M {xy1[0]} {xy1[1]} C {m1[0]} {m1[1]} {m2[0]} {m2[1]} {xy2[0]} {xy2[1]}' />"
                 pass
             elif (state1_idx == state2_idx+1) or (state1_idx == 0 and state2_idx == len(states)):
                 # draw a counter-clockwise arc

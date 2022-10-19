@@ -7,7 +7,7 @@ circle_t = typing.NewType("xyr", tuple[int, int, float])
 
 def rad_to_cart(radians, dist, centerx=None, centery=None) -> xy_t:
     """ Radial vector (from center to North) to cartesian converter. """
-    radians += math.pi
+    radians = -(radians + math.pi)
     x = int(dist * math.sin(radians))
     y = int(dist * math.cos(radians))
     if centerx is not None:
@@ -36,8 +36,30 @@ def cart_to_rad(p1: xy_t, p2: xy_t) -> rd_t:
             radians = 0
     else:
         radians = math.asin(xdist / dist)
+        # if radians > math.pi:
+        #     radians -= math.pi
+        # if radians > math.pi / 2:
+        #     radians -= math.pi / 2
+        #
+        # if xdist > 0:
+        #     if ydist <= 0: # quadrant 1
+        #         pass
+        #     else: # quadrant 2
+        #         radians = abs(radians if (radians > math.pi / 2) else (radians + math.pi / 2))
+        # else:
+        #     radians += math.pi
+        #     if ydist > 0: # quadrant 3
+        #         radians = abs(radians if (radians <= 3*math.pi / 2) else (radians - math.pi / 2))
+        #     else: # quadrant 4
+        #         radians = abs(radians if (radians > 3*math.pi / 2) else (radians + math.pi / 2))
 
     return radians, dist
+
+def test_cart_to_rad():
+    assert cart_to_rad([0, 0], [0, 1]) == math.pi
+    assert cart_to_rad([0, 0], [0, -1]) == 0
+    assert cart_to_rad([0, 0], [1, 0]) == math.pi / 2
+    assert cart_to_rad([0, 0], [-0, 0]) == 3*math.pi / 2
 
 def circle_vector_intersections(circle: circle_t, vector_radians: float, *distances) -> list[xy_t]:
     ret = []
@@ -52,7 +74,7 @@ def circle_intersections(big_circle: circle_t, small_circle: circle_t) -> tuple[
 
     # calculate an intersection for circles where the small circle is immediately above the big circle
     # xi = example intersection
-    xi_radians = math.asin((sr / 2) / Br) * 2
+    xi_radians = abs( math.asin((sr / 2) / Br) * 2 )
 
     # now add the radians to the position of the small circle to get the intersection points
     s_radians, _ = cart_to_rad([Bx,By], [sx,sy])
