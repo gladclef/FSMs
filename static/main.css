@@ -1,0 +1,48 @@
+body {
+    background-color: aquamarine;
+}
+
+div.fsm_container {
+    display: inline-block;
+    vertical-align: top;
+    min-width: 200px;
+    min-height: 200px;
+    background-color: white;
+    border: 2px solid black;
+    margin: 4px;
+}
+
+div.table {
+    display: inline-block;
+    vertical-align: top;
+    width: 800px;
+    height: 650px;
+    overflow-x: auto;
+    overflow-y: auto;
+    margin-top: 4px;
+}
+div.table .row {
+    display: block;
+}
+div.table .tcell {
+    display: inline-block;
+    padding: 0;
+}
+div.table .header {
+    vertical-align: top;
+    margin-bottom: 6px;
+}
+div.table .sym {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+input.success {
+}
+input.failure {
+    border-color: darkred;
+    color: darkred;
+}
