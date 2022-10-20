@@ -21,6 +21,7 @@ div.fsm_container circle {
 }
 div.fsm_container path {
     stroke: black;
+    stroke-width: 1.5px;
     fill: transparent;
 }
 

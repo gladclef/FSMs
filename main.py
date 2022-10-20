@@ -99,12 +99,21 @@ def populate_diagram(table_vals:list[list[str]] = None) -> str:
     state_intersections = {}
     for state_idx in range(len(states)):
         state = states[state_idx]
-        x, y = geo.rad_to_cart(angle * state_idx, r2, center)
-        state_pos[state] = [x, y]
-        ret += f"<circle cx='{x}' cy='{y}' r='{r1}' />"
-        i1, i2 = geo.circle_intersections([center, center, r2], [x, y, r1])
+        p = geo.rad_to_cart(angle * state_idx, r2, center)
+        state_pos[state] = p
+        ret += f"<circle cx='{p.x}' cy='{p.y}' r='{r1}' />"
+        i1, i2 = geo.circle_intersections([center, center, r2], [p.x, p.y, r1])
         i3, i4 = geo.circle_vector_intersections([center, center, r2], angle*state_idx, r2-r1, r2+r1)
         state_intersections[state] = [i1, i2, i3, i4] # left, right, inside, outside
+
+    # helper functions
+    transition_texts : dict[geo.Pxy,list[str]] = {}
+    def add_transition_text(p1: geo.Pxy, sval: str):
+        for p2, svals in transition_texts.items():
+            if p1.dist(p2) < 10:
+                svals.push(sval)
+                return
+        transition_texts[p1] = [sval]
 
     # draw some transitions!
     for state1 in states:
@@ -123,20 +132,14 @@ def populate_diagram(table_vals:list[list[str]] = None) -> str:
                 pass
             if (state2_idx == state1_idx+1) or (state2_idx == 0 and state1_idx == len(states)):
                 # draw a clockwise arc
-                p1 = state_pos[state1]
-                p2 = state_pos[state2]
                 xy1 = state_intersections[state1][1]
                 xy2 = state_intersections[state2][0]
-                radians1, _ = geo.cart_to_rad([center, center], xy1)
-                radians2, _ = geo.cart_to_rad([center, center], xy2)
-                # middle = geo.circle_vector_intersections([center, center, r2], angle*(state1_idx+0.5), r2*2)[0]
-                # ret += f"<path d='M {xy1[0]} {xy1[1]} Q {middle[0]} {middle[1]} {xy2[0]} {xy2[1]}' />"
-                radians1, _ = geo.cart_to_rad(p1, xy1)
-                radians2, _ = geo.cart_to_rad(p2, xy2)
-                m1 = geo.circle_vector_intersections([p1[0], p1[1], r1], radians1, r2*2)[0]
-                m2 = geo.circle_vector_intersections([p2[0], p2[1], r1], radians2, r2*2)[0]
-                print(f"{state1}: {p1}{xy1}/{radians1}/{m1}, {state2}: {p2}{xy2}/{radians2}/{m2}")
-                ret += f"<path d='M {xy1[0]} {xy1[1]} C {m1[0]} {m1[1]} {m2[0]} {m2[1]} {xy2[0]} {xy2[1]}' />"
+                ret += f"<path d='M {xy1.x} {xy1.y} A {r2} {r2} 0 0 1 {xy2.x} {xy2.y}' />"
+                rad1 = geo.cart_to_rad(geo.Pxy(center, center), xy1)
+                rad2 = geo.cart_to_rad(geo.Pxy(center, center), xy1)
+                rad_mid = geo.Rad(rad1.radians + (rad2.radians-rad1.radians)*2/3, r2)
+                mid = geo.rad_to_cart(rad_mid, centerx=center, centery=center)
+                add_transition_text(mid, transition)
                 pass
             elif (state1_idx == state2_idx+1) or (state1_idx == 0 and state2_idx == len(states)):
                 # draw a counter-clockwise arc
@@ -146,10 +149,9 @@ def populate_diagram(table_vals:list[list[str]] = None) -> str:
                 pass
 
     # add some text!
-    for state_idx in range(len(states)):
-        state = states[state_idx]
-        x, y = state_pos[state]
-        ret += f"<text x='{x}' y='{y+5}'>{state}</text>"
+    for state_idx, state in enumerate(states):
+        p = state_pos[state]
+        ret += f"<text x='{p.x}' y='{p.y+5}'>{state}</text>"
 
     ret += "</svg>"
     return ret

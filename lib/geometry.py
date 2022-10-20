@@ -1,73 +1,108 @@
+from __future__ import annotations
+
 import math
 import typing
+from typing import Any
 
-xy_t = typing.NewType("xy", tuple[int, int])
-rd_t = typing.NewType("rd", tuple[float, int])
-circle_t = typing.NewType("xyr", tuple[int, int, float])
+circle_t = typing.NewType("xyr", tuple[float, float, float])
 
-def rad_to_cart(radians, dist, centerx=None, centery=None) -> xy_t:
+class Pxy():
+    def __init__(self, x : float | Any, y : float | None = None):
+        if isinstance(x, Pxy):
+            other = x
+            self.x = other.x
+            self.y = other.y
+        else:
+            self.x = x
+            self.y = y
+
+    def xdist(self, other):
+        return other.x - self.x
+
+    def ydist(self, other):
+        return other.y - self.y
+
+    def dist(self, other):
+        return math.sqrt( (self.x-other.x)**2 + (self.y-other.y)**2 )
+
+    def to_rad(self) -> Rad:
+        return cart_to_rad(Pxy(0,0), self)
+
+class Rad():
+    def __init__(self, radians : float | Any, dist : float | None = None):
+        if isinstance(radians, Rad):
+            other = radians
+            self.radians = other.radians
+            self.dist = other.dist
+        else:
+            self.radians = radians
+            self.dist = dist
+
+    def to_cart(self) -> Pxy:
+        return rad_to_cart(self.radians, self.dist)
+
+def rad_to_cart(radians: Rad | float, dist: float | None=None, centerx: float | None=None, centery: float | None=None) -> Pxy:
     """ Radial vector (from center to North) to cartesian converter. """
-    radians = -(radians + math.pi)
-    x = int(dist * math.sin(radians))
-    y = int(dist * math.cos(radians))
+    rad = radians
+    if dist is not None:
+        rad = Rad(radians, dist)
+    x = rad.dist * math.sin(rad.radians)
+    y = -rad.dist * math.cos(rad.radians)
+
     if centerx is not None:
         x += centerx
         if centery is not None:
             y += centery
         else:
             y += centerx
-    return x, y
 
-def cart_to_rad(p1: xy_t, p2: xy_t) -> rd_t:
-    """ Cartesian to radial vector (from p1 to North) converter. """
-    xdist = (p2[0]-p1[0])
-    ydist = (p2[1]-p1[1])
-    dist = math.sqrt( xdist**2 + ydist**2 )
+    return Pxy(x, y)
+
+def cart_to_rad(p1: Pxy, p2: Pxy) -> Rad:
+    """ Cartesian to radial vector converter.
+
+    Radians increase clockwise
+    X increases right, Y increases down
+    """
+    p1 = Pxy(p1)
+    p2 = Pxy(p2)
+    xdist = p1.xdist(p2)
+    ydist = p1.ydist(p2)
+    dist = p1.dist(p2)
 
     if (ydist == 0):
         if xdist > 0:
-            radians = math.pi / 2
+            radians = math.pi/2
         else:
-            radians = -math.pi / 2
+            radians = math.pi*3/2
     elif (xdist == 0):
         if ydist > 0:
             radians = math.pi
         else:
             radians = 0
     else:
-        radians = math.asin(xdist / dist)
-        # if radians > math.pi:
-        #     radians -= math.pi
-        # if radians > math.pi / 2:
-        #     radians -= math.pi / 2
-        #
-        # if xdist > 0:
-        #     if ydist <= 0: # quadrant 1
-        #         pass
-        #     else: # quadrant 2
-        #         radians = abs(radians if (radians > math.pi / 2) else (radians + math.pi / 2))
-        # else:
-        #     radians += math.pi
-        #     if ydist > 0: # quadrant 3
-        #         radians = abs(radians if (radians <= 3*math.pi / 2) else (radians - math.pi / 2))
-        #     else: # quadrant 4
-        #         radians = abs(radians if (radians > 3*math.pi / 2) else (radians + math.pi / 2))
+        radians = math.asin(ydist / dist) # -pi/2 to pi/2
 
-    return radians, dist
+        if xdist > 0:
+            if ydist <= 0: # quadrant 1
+                radians += math.pi/2
+            else: # quadrant 2
+                radians += math.pi/2
+        else:
+            if ydist > 0: # quadrant 3
+                radians = math.pi*3/2 - radians
+            else: # quadrant 4
+                radians = math.pi*3/2 + abs(radians)
 
-def test_cart_to_rad():
-    assert cart_to_rad([0, 0], [0, 1]) == math.pi
-    assert cart_to_rad([0, 0], [0, -1]) == 0
-    assert cart_to_rad([0, 0], [1, 0]) == math.pi / 2
-    assert cart_to_rad([0, 0], [-0, 0]) == 3*math.pi / 2
+    return Rad(radians, dist)
 
-def circle_vector_intersections(circle: circle_t, vector_radians: float, *distances) -> list[xy_t]:
+def circle_vector_intersections(circle: circle_t, vector_radians: float, *distances) -> list[Pxy]:
     ret = []
     for d in distances:
         ret.append( rad_to_cart(vector_radians, d, circle[0], circle[1]) )
     return ret
 
-def circle_intersections(big_circle: circle_t, small_circle: circle_t) -> tuple[xy_t, xy_t]:
+def circle_intersections(big_circle: circle_t, small_circle: circle_t) -> tuple[Pxy, Pxy]:
     """ Calculates the intersecting points for a small circle whose center lies on the perimeter of the big circle. """
     Bx, By, Br = big_circle
     sx, sy, sr = small_circle
@@ -77,10 +112,10 @@ def circle_intersections(big_circle: circle_t, small_circle: circle_t) -> tuple[
     xi_radians = abs( math.asin((sr / 2) / Br) * 2 )
 
     # now add the radians to the position of the small circle to get the intersection points
-    s_radians, _ = cart_to_rad([Bx,By], [sx,sy])
-    i1_radians = s_radians - xi_radians
-    i2_radians = s_radians + xi_radians
-    i1 = rad_to_cart(i1_radians, Br, Bx, By)
-    i2 = rad_to_cart(i2_radians, Br, Bx, By)
+    s_rad = cart_to_rad(Pxy(Bx,By), Pxy(sx,sy))
+    i1_rad = Rad(s_rad.radians - xi_radians, Br)
+    i2_rad = Rad(s_rad.radians + xi_radians, Br)
+    i1 = rad_to_cart(i1_rad, centerx=Bx, centery=By)
+    i2 = rad_to_cart(i2_rad, centerx=Bx, centery=By)
 
     return i1, i2
