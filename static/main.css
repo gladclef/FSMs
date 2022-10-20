@@ -58,6 +58,9 @@ div.table .sym {
     cursor: pointer;
 }
 
+div.code {
+    display: inline-block;
+}
 div.code input {
     width: 600px;
     height: 650px;

@@ -10,8 +10,7 @@ def parse_table(table_vals:list[list[str]] = None) -> tuple[list[list[str]], lis
     if table_vals is None:
         table_vals = [["",     "reset", "start", "is_done"],
                       ["IDLE", "IDLE",  "WORK",  ""],
-                      ["WORK", "IDLE",  "HELLO", "IDLE"],
-                      ["HELLO","IDLE",  "WORK",  "IDLE"]]
+                      ["WORK", "IDLE",  "",      "IDLE"]]
 
     # filter the input to only valid characters
     def filter_varname(sval):
