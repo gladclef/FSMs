@@ -24,6 +24,11 @@ div.fsm_container path {
     stroke-width: 1.5px;
     fill: transparent;
 }
+div.fsm_container circle.arc {
+    stroke: black;
+    stroke-width: 1.5px;
+    fill: transparent;
+}
 
 div.table {
     display: inline-block;
@@ -51,6 +56,11 @@ div.table .sym {
     display: inline-block;
     font-size: 20px;
     cursor: pointer;
+}
+
+div.code input {
+    width: 600px;
+    height: 650px;
 }
 
 input.success {

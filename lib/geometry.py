@@ -28,6 +28,9 @@ class Pxy():
     def to_rad(self) -> Rad:
         return cart_to_rad(Pxy(0,0), self)
 
+    def __str__(self):
+        return f"[{self.x}, {self.y}]"
+
 class Rad():
     def __init__(self, radians : float | Any, dist : float | None = None):
         if isinstance(radians, Rad):

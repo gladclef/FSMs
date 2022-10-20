@@ -11,6 +11,8 @@
         <div>
             <div class="fsm_container">{{ populate_diagram() | safe }}</div>
             <div class="table">{{ populate_table() | safe }}</div>
+            <div class="code">{{ populate_code() | safe }}</div>
+            <div class="saveme"><input type="text" name="saveme_tvals" onchange="saveme_changed()" /></div>
         </div>
 <!--        <div id="f1">-->
 <!--            <p>Enter Name:</p>-->

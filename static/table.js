@@ -26,13 +26,33 @@ function get_table_vals() {
     return ret;
 }
 
+dont_update_on_saveme_changed = false;
+function saveme_changed() {
+    if (dont_update_on_saveme_changed) {
+        return;
+    }
+
+    get_table_vals(); // do this so that latest_failure_instance is set
+    update( eval($('[name=saveme_tvals]').val()) );
+}
+
+function update(table_vals) {
+    post("/update_table", {"table_vals": table_vals}, null, form_set('table', true));
+    post("/update_graph", {"table_vals": table_vals}, null, form_set('fsm_container', true));
+    post("/update_code", {"table_vals": table_vals}, null, form_set('code', true));
+
+    dont_update_on_saveme_changed = true;
+    $('[name=saveme_tvals]').val(JSON.stringify(table_vals));
+    dont_update_on_saveme_changed = false;
+}
+
 function row_up(idx) {
     if (idx === 0) { return; }
     table_vals = get_table_vals();
     prev_row = table_vals[idx];
     table_vals.splice(idx+2, 0, prev_row);
     table_vals.splice(idx, 1);
-    post("/update_table", {"table_vals": table_vals}, null, form_set('table', true));
+    update(table_vals);
 }
 
 function row_down(idx) {
@@ -41,7 +61,7 @@ function row_down(idx) {
     next_row = table_vals[idx+2];
     table_vals.splice(idx+2, 1);
     table_vals.splice(idx+1, 0, next_row);
-    post("/update_table", {"table_vals": table_vals}, null, form_set('table', true));
+    update(table_vals);
 }
 
 function row_plus(idx) {
@@ -51,7 +71,7 @@ function row_plus(idx) {
         row.push("");
     }
     table_vals.splice(idx+2, 0, row);
-    post("/update_table", {"table_vals": table_vals}, null, form_set('table', true));
+    update(table_vals);
 }
 
 function col_plus() {
@@ -59,5 +79,5 @@ function col_plus() {
     for (var r = 0; r < table_vals.length; r++) {
         table_vals[r].push("");
     }
-    post("/update_table", {"table_vals": table_vals}, null, form_set('table', true));
+    update(table_vals);
 }
