@@ -36,8 +36,48 @@ function saveme_changed() {
     update( eval($('[name=saveme_tvals]').val()) );
 }
 
+function table_key_up(jinput, key) {
+    let jnext = null;
+    parts = jinput.attr("name").split("_");
+    row_idx = parseInt(parts[0]);
+    col_idx = parseInt(parts[1]);
+
+    if (key === "ArrowUp") {
+        jnext = $("input[name="+(row_idx-1)+"_"+col_idx+"]");
+    } else if (key === "ArrowDown") {
+        jnext = $("input[name="+(row_idx+1)+"_"+col_idx+"]");
+        if (jnext.length === 0) {
+            row_plus(row_idx);
+            setTimeout(() => {
+                jnext = $("input[name="+(row_idx+1)+"_"+col_idx+"]");
+                jnext.focus();
+                jnext.select();
+            }, 200);
+        }
+    } else if (key === "Enter") {
+        update(get_table_vals());
+        setTimeout(() => {
+            jinput = $("input[name="+row_idx+"_"+col_idx+"]");
+            jinput.focus();
+            jinput.select();
+        }, 200);
+    }
+
+    if (jnext != null && jnext.length > 0) {
+        jnext.focus();
+        jnext.select();
+    }
+}
+
+function attach_table_handles(jtable, results) {
+    let jinputs = form_get_inputs(jtable);
+    $.each(jinputs, (i, jinput) => {
+        jinput.keyup((e) => { table_key_up(jinput, e.key); } );
+    });
+}
+
 function update(table_vals) {
-    post("/update_table", {"table_vals": table_vals}, null, form_set('table', true));
+    post("/update_table", {"table_vals": table_vals}, null, form_set('table', true, attach_table_handles));
     post("/update_graph", {"table_vals": table_vals}, null, form_set('fsm_container', true));
     post("/update_code", {"table_vals": table_vals}, null, form_set('code', true));
 

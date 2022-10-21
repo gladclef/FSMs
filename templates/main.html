@@ -6,6 +6,21 @@
         <script src="{{ url_for('static', filename='types.js') }}"></script>
         <script src="{{ url_for('static', filename='dom.js') }}"></script>
         <script src="{{ url_for('static', filename='table.js') }}"></script>
+        <script type="text/javascript">
+            function is_loaded() {
+                return (typeof $ !== "undefined") && (typeof update !== "undefined") && (typeof post !== "undefined");
+            }
+            function on_loaded_update() {
+                if (is_loaded()) {
+                    $(document).ready(() => {
+                        update(get_table_vals());
+                    })
+                } else {
+                    setTimeout(on_loaded_update, 30);
+                }
+            }
+            on_loaded_update();
+        </script>
     </head>
     <body>
         <div>

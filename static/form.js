@@ -50,7 +50,7 @@ function form_get_input_vals(container_handle) {
  * Must be called after form_get_inputs or form_get_input_vals.
  */
 latest_failure_instance = null;
-function form_set(elem_handle, success) {
+function form_set(elem_handle, success, callback) {
     let jcontainer = latest_form_container;
 
     // find the jval instance by name, id, or class
@@ -80,6 +80,9 @@ function form_set(elem_handle, success) {
                     latest_failure_instance.removeClass("failure");
                 }
                 dom_set_value(jval, results);
+                if (callback != null) {
+                    callback(jval, results);
+                }
             };
         } else {
             return () => {
@@ -88,6 +91,9 @@ function form_set(elem_handle, success) {
                 jval.addClass("failure");
                 if (!jval.is("input") || jval.attr("type") !== "submit") {
                     dom_set_value(jval, "error");
+                }
+                if (callback != null) {
+                    callback(jval, results);
                 }
             };
         }
