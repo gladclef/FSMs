@@ -25,6 +25,21 @@ def parse_table(table_vals:list[list[str]] = None) -> tuple[list[list[str]], lis
         new_table_vals.append(list(map(filter_varname, row)))
     table_vals = new_table_vals
 
+    # filter out empty rows and columns
+    new_table_vals = []
+    for row in table_vals:
+        if any(filter(lambda s: s != "", row)):
+            new_table_vals.append(row)
+    if len(new_table_vals) == 0:
+        return [], [], [], {}
+    for col_idx in range(len(new_table_vals[0])):
+        found = False
+        col_vals = [row[col_idx] for row in new_table_vals]
+        if not any(filter(lambda s: s != "", col_vals)):
+            for row in new_table_vals:
+                del row[col_idx]
+    table_vals = new_table_vals
+
     # extract the states and transitions
     states, transitions = [], []
     if len(table_vals) > 0:
@@ -34,13 +49,14 @@ def parse_table(table_vals:list[list[str]] = None) -> tuple[list[list[str]], lis
     transition_map = {state:{} for state in states}
 
     # extract the state transition mapping
-    for state_row in table_vals[1:]:
-        state = state_row[0] if (len(state_row) > 0) else ""
-        for trans_idx in range(len(transitions)):
-            transition = transitions[trans_idx]
-            next_state = state_row[trans_idx+1]
-            if next_state != "":
-                transition_map[state][transition] = next_state
+    if len(table_vals) > 0:
+        for state_row in table_vals[1:]:
+            state = state_row[0] if (len(state_row) > 0) else ""
+            for trans_idx in range(len(transitions)):
+                transition = transitions[trans_idx]
+                next_state = state_row[trans_idx+1]
+                if next_state != "":
+                    transition_map[state][transition] = next_state
 
     return table_vals, states, transitions, transition_map
 
