@@ -225,10 +225,12 @@ def populate_graph(table_vals:list[list[str]] = None) -> str:
     return ret
 
 def populate_code(table_vals:list[list[str]] = None) -> str:
+    table_vals_str = str(table_vals)
     table_vals, states, transitions, transition_map = parse_table(table_vals)
 
     ret = "-----------------------------------------------------------\n" \
           "-- FSM created with https://github.com/gladclef/FSMs\n" \
+          f"-- {table_vals_str}\n" \
           "-----------------------------------------------------------\n" \
           "\n" \
           "library IEEE;\n" \
