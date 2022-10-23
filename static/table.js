@@ -1,9 +1,28 @@
+function get_table_text_boxes(jtable) {
+    if (arguments.length === 0 || jtable === undefined || jtable == null) {
+        jtable = $("div.table");
+    }
+    let jinputs = form_get_inputs(jtable);
+    jinputs = jinputs.filter(jinput => jinput.attr("type") === "text")
+    return jinputs;
+}
+
+function get_table_buttons(jtable) {
+    if (arguments.length === 0 || jtable === undefined || jtable == null) {
+        jtable = $("div.table");
+    }
+    let jinputs = form_get_inputs(jtable);
+    jinputs = jinputs.filter(jinput => jinput.attr("type") === "button")
+    return jinputs;
+}
+
 function get_table_vals() {
-    let jinputs = form_get_inputs($("div.table"));
+    console.log('get_table_vals');
+    let jtexts = get_table_text_boxes();
     ret = [];
 
-    $.each(jinputs, (i, jinput) => {
-        parts = jinput.attr("name").split("_");
+    $.each(jtexts, (i, jtext) => {
+        parts = jtext.attr("name").split("_");
         row_idx = parseInt(parts[0]);
         col_idx = parseInt(parts[1]);
 
@@ -20,7 +39,7 @@ function get_table_vals() {
         }
 
         // add this value to the return table values
-        ret[row_idx][col_idx] = jinput.val();
+        ret[row_idx][col_idx] = jtext.val();
     });
 
     return ret;
@@ -33,10 +52,11 @@ function saveme_changed() {
     }
 
     get_table_vals(); // do this so that latest_failure_instance is set
-    update( eval($('[name=saveme_tvals]').val()) );
+    _update( eval($('[name=saveme_tvals]').val()), false );
 }
 
 function table_key_up(jinput, key) {
+    console.log('table_key_up');
     let jnext = null;
     parts = jinput.attr("name").split("_");
     row_idx = parseInt(parts[0]);
@@ -55,7 +75,7 @@ function table_key_up(jinput, key) {
             }, 200);
         }
     } else if (key === "Enter") {
-        update(get_table_vals());
+        update();
         setTimeout(() => {
             jinput = $("input[name="+row_idx+"_"+col_idx+"]");
             jinput.focus();
@@ -70,14 +90,32 @@ function table_key_up(jinput, key) {
 }
 
 function attach_table_handles(jtable, results) {
-    let jinputs = form_get_inputs(jtable);
-    $.each(jinputs, (i, jinput) => {
-        jinput.keyup((e) => { table_key_up(jinput, e.key); } );
+    console.log('attach_table_handles');
+    let jtexts = get_table_text_boxes(jtable);
+    let jbuttons = get_table_buttons(jtable);
+    $.each(jtexts, (i, jtext) => {
+        jtext.keyup((e) => { table_key_up(jtext, e.key); } );
+    });
+    $.each(jbuttons, (i, jbutton) => {
+        if (jbutton.attr("name").indexOf("clear") >= 0) {
+            jbutton.click(update_with_clear_empty);
+        } else {
+            jbutton.click(update);
+        }
     });
 }
 
-function update(table_vals) {
-    post("/update_table", {"table_vals": table_vals}, null, form_set('table', true, attach_table_handles));
+function update() {
+    _update(get_table_vals(), false);
+}
+
+function update_with_clear_empty() {
+    _update(get_table_vals(), true)
+}
+
+function _update(table_vals, clear_empty) {
+    console.log("_update");
+    post("/update_table", {"table_vals": table_vals, "clear_emtpy": clear_empty}, null, form_set('table', true, attach_table_handles));
     post("/update_graph", {"table_vals": table_vals}, null, form_set('fsm_container', true));
     post("/update_code", {"table_vals": table_vals}, null, form_set('code', true));
 
@@ -92,7 +130,7 @@ function row_up(idx) {
     prev_row = table_vals[idx];
     table_vals.splice(idx+2, 0, prev_row);
     table_vals.splice(idx, 1);
-    update(table_vals);
+    _update(table_vals, false);
 }
 
 function row_down(idx) {
@@ -101,7 +139,7 @@ function row_down(idx) {
     next_row = table_vals[idx+2];
     table_vals.splice(idx+2, 1);
     table_vals.splice(idx+1, 0, next_row);
-    update(table_vals);
+    _update(table_vals, false);
 }
 
 function row_plus(idx) {
@@ -111,7 +149,7 @@ function row_plus(idx) {
         row.push("");
     }
     table_vals.splice(idx+2, 0, row);
-    update(table_vals);
+    _update(table_vals, false);
 }
 
 function col_plus() {
@@ -119,5 +157,5 @@ function col_plus() {
     for (var r = 0; r < table_vals.length; r++) {
         table_vals[r].push("");
     }
-    update(table_vals);
+    _update(table_vals, false);
 }

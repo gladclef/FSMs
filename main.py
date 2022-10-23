@@ -6,7 +6,7 @@ import lib.geometry as geo
 
 app = Flask(__name__)
 
-def parse_table(table_vals:list[list[str]] = None) -> tuple[list[list[str]], list[str], list[str], dict[str,dict[str,str]]]:
+def parse_table(table_vals:list[list[str]] = None, clear_empty:bool = False) -> tuple[list[list[str]], list[str], list[str], dict[str,dict[str,str]]]:
     if table_vals is None:
         table_vals = [["",     "reset", "start", "is_done"],
                       ["IDLE", "IDLE",  "WORK",  ""],
@@ -26,19 +26,20 @@ def parse_table(table_vals:list[list[str]] = None) -> tuple[list[list[str]], lis
     table_vals = new_table_vals
 
     # filter out empty rows and columns
-    new_table_vals = []
-    for row in table_vals:
-        if any(filter(lambda s: s != "", row)):
-            new_table_vals.append(row)
-    if len(new_table_vals) == 0:
-        return [], [], [], {}
-    for col_idx in range(len(new_table_vals[0])):
-        found = False
-        col_vals = [row[col_idx] for row in new_table_vals]
-        if not any(filter(lambda s: s != "", col_vals)):
-            for row in new_table_vals:
-                del row[col_idx]
-    table_vals = new_table_vals
+    if clear_empty:
+        new_table_vals = []
+        for row in table_vals:
+            if any(filter(lambda s: s != "", row)):
+                new_table_vals.append(row)
+        if len(new_table_vals) == 0:
+            return [], [], [], {}
+        for col_idx in range(len(new_table_vals[0])):
+            found = False
+            col_vals = [row[col_idx] for row in new_table_vals]
+            if not any(filter(lambda s: s != "", col_vals)):
+                for row in new_table_vals:
+                    del row[col_idx]
+        table_vals = new_table_vals
 
     # extract the states and transitions
     states, transitions = [], []
@@ -60,14 +61,14 @@ def parse_table(table_vals:list[list[str]] = None) -> tuple[list[list[str]], lis
 
     return table_vals, states, transitions, transition_map
 
-def populate_table(table_vals:list[list[str]] = None) -> str:
-    table_vals, states, transitions, transition_map = parse_table(table_vals)
+def populate_table(table_vals:list[list[str]] = None, clear_empty:bool = False) -> str:
+    table_vals, states, transitions, transition_map = parse_table(table_vals, clear_empty)
 
     # get dimensions
     width, height = css_get_size("div.table")
     symw, symh = css_get_size("div.table .sym")
     cwidth = max(120, min(200, math.floor((width-3*symw-20) / (len(transitions)+1) )))
-    rheight = max(20, min(40, height / (len(states)+1) ))
+    rheight = max(20, min(40, height / (len(states)+2) ))
     style = f"style='width: {cwidth}px; height: {rheight}px'"
     row_style = f"style='width: {cwidth*(len(transitions)+1) + symw*3}px'"
 
@@ -95,6 +96,8 @@ def populate_table(table_vals:list[list[str]] = None) -> str:
             next_state = "" if (transition not in state_transitions) else state_transitions[transition]
             row += cell(next_state, row_idx+1, col_idx+1)
         ret += row + syms(row_idx) + "</div>"
+    # ... footer
+    ret += "<div><input type='button' name='update' value='Update' /><input type='button' name='update_and_clear' value='Clear Empty'></div>"
 
     return ret
 
@@ -305,7 +308,8 @@ def populate_code(table_vals:list[list[str]] = None) -> str:
 def update_table():
     if request.method == 'POST':
         table_vals = request.json['table_vals']
-        table_str = populate_table(table_vals)
+        clear_emtpy = request.json['clear_emtpy']
+        table_str = populate_table(table_vals, clear_emtpy)
         return jsonify(table_str)
 
 @app.route('/update_graph', methods=['POST'])
