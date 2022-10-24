@@ -2,8 +2,14 @@ body {
     background-color: aquamarine;
 }
 
-div.fsm_container {
+div.inline {
     display: inline-block;
+}
+
+div.diagram_container {
+    vertical-align: top;
+}
+div.diagram {
     vertical-align: top;
     min-width: 200px;
     min-height: 200px;
@@ -11,27 +17,26 @@ div.fsm_container {
     border: 2px solid black;
     margin: 4px;
 }
-div.fsm_container text {
+div.diagram text {
     font-size: 18px;
     font-weight: bold;
     text-anchor: middle;
 }
-div.fsm_container circle {
+div.diagram circle {
     fill: dodgerblue;
 }
-div.fsm_container path {
+div.diagram path {
     stroke: black;
     stroke-width: 1.5px;
     fill: transparent;
 }
-div.fsm_container circle.arc {
+div.diagram circle.arc {
     stroke: black;
     stroke-width: 1.5px;
     fill: transparent;
 }
 
 div.table {
-    display: inline-block;
     vertical-align: top;
     width: 800px;
     height: 650px;
@@ -59,7 +64,6 @@ div.table .sym {
 }
 
 div.code {
-    display: inline-block;
 }
 div.code input {
     width: 600px;

@@ -116,7 +116,7 @@ function update_with_clear_empty() {
 function _update(table_vals, clear_empty) {
     console.log("_update");
     post("/update_table", {"table_vals": table_vals, "clear_emtpy": clear_empty}, null, form_set('table', true, attach_table_handles));
-    post("/update_graph", {"table_vals": table_vals}, null, form_set('fsm_container', true));
+    post("/update_graph", {"table_vals": table_vals}, null, form_set('diagram', true));
     post("/update_code", {"table_vals": table_vals}, null, form_set('code', true));
 
     dont_update_on_saveme_changed = true;

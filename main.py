@@ -110,7 +110,7 @@ def populate_graph(table_vals:list[list[str]] = None) -> str:
     size = r2*2 + r1*2 + rself*4 + 20*2
     center = size / 2
     angle = 2*math.pi / len(states)
-    _, text_height = css_get_size("div.fsm_container text")
+    _, text_height = css_get_size("div.diagram text")
     pcenter = geo.Pxy(center, center)
 
     # prep
