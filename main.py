@@ -246,60 +246,72 @@ def populate_graph(table_vals:list[list[str]] = None) -> str:
 def populate_code(table_vals:list[list[str]] = None) -> str:
     table_vals_str = str(table_vals)
     table_vals, states, transitions, transition_map = parse_table(table_vals)
+    s = "   "
 
-    ret = "-----------------------------------------------------------\n" \
-          "-- FSM created with https://github.com/gladclef/FSMs\n" \
+    ret = f"-----------------------------------------------------------\n" \
+          f"-- FSM created with https://github.com/gladclef/FSMs\n" \
           f"-- {table_vals_str}\n" \
-          "-----------------------------------------------------------\n" \
-          "\n" \
-          "library IEEE;\n" \
-          "use IEEE.STD_LOGIC_1164.ALL;\n" \
-          "use IEEE.NUMERIC_STD.ALL;\n" \
-          "\n" \
-          "entity fsm is\n" \
-          "   Port (\n" \
-          "      reset : in std_logic;\n" \
-          "      clk : in std_logic\n" \
-          "   );\n" \
-          "end fsm;\n" \
-          "\n" \
-          "architecture rtl of fsm is\n"
-    ret += f"   type state_type is ({', '.join(states)});\n" \
-           f"   signal state_reg, state_next: state_type;\n"
+          f"-----------------------------------------------------------\n" \
+          f"\n" \
+          f"library IEEE;\n" \
+          f"use IEEE.STD_LOGIC_1164.ALL;\n" \
+          f"use IEEE.NUMERIC_STD.ALL;\n" \
+          f"\n" \
+          f"entity fsm is\n" \
+          f"{s*1}Port (\n" \
+          f"{s*2}reset : in std_logic;\n" \
+          f"{s*2}clk : in std_logic\n" \
+          f"{s*1});\n" \
+          f"end fsm;\n" \
+          f"\n" \
+          f"architecture rtl of fsm is\n"
+    ret += f"{s*1}type state_type is ({', '.join(states)});\n" \
+           f"{s*1}signal state_reg, state_next: state_type;\n"
     for transition in transitions:
-        if transition != "reset":
-            ret += f"   signal {transition}: std_logic;\n"
-    ret += "begin\n" \
-           "\n" \
-           "   -- state and data register\n" \
-           "   process(clk, reset)\n" \
-           "   begin\n" \
-           "      if (reset = '1') then\n" \
-           f"         state_reg <= {states[0]};\n" \
-           "      elsif (rising_edge(clk)) then\n" \
-           "         state_reg <= state_next;\n" \
-           "      end if;\n" \
-           "   end process;\n" \
-           "\n" \
-           "   -- combinational circuit\n" \
-           f"   process(state_reg, {', '.join(transitions)})\n" \
-           "   begin\n" \
-           "      state_next <= state_reg;\n" \
-           "\n" \
-           "      case state_reg is\n"
+        if transition != "reset" and transition.replace("_","") != "":
+            ret += f"{s*1}signal {transition}: std_logic;\n"
+    ret += f"begin\n" \
+           f"\n" \
+           f"{s*1}-- state and data register\n" \
+           f"{s*1}process(clk, reset)\n" \
+           f"{s*1}begin\n" \
+           f"{s*2}if (reset = '1') then\n" \
+           f"{s*3}state_reg <= {states[0]};\n" \
+           f"{s*2}elsif (rising_edge(clk)) then\n" \
+           f"{s*2}   state_reg <= state_next;\n" \
+           f"{s*2}end if;\n" \
+           f"{s*1}end process;\n" \
+           f"\n" \
+           f"{s*1}-- combinational circuit\n" \
+           f"{s*1}process(state_reg, {', '.join(transitions)})\n" \
+           f"{s*1}begin\n" \
+           f"{s*2}state_next <= state_reg;\n" \
+           f"\n" \
+           f"{s*2}case state_reg is\n"
+
     for state in states:
-        ret += f"         when {state} =>\n"
+        ret += f"{s*3}when {state} =>\n"
         first_transition = True
         for transition, state_next in transition_map[state].items():
-            ifstr = "if" if first_transition else "elsif"
-            ret += f"            {ifstr} ({transition} = '1') then\n" \
-                   f"               state_next <= {state_next};\n"
-            first_transition = False
-        ret += "            end if;\n" \
-               "\n"
-    ret += "      end case;\n" \
-           "   end process;\n" \
-           "end rtl;\n"
+            if transition.replace("_", "") != "":
+                ifstr = "if" if first_transition else "elsif"
+                ret += f"{s*4}{ifstr} ({transition} = '1') then\n" \
+                       f"{s*5}state_next <= {state_next};\n"
+                first_transition = False
+            elif first_transition:
+                ret += f"{s*4}state_next <= {state_next};\n"
+            else:
+                ret += f"{s*4}else\n" \
+                       f"{s*5}state_next <= {state_next};\n"
+        if not first_transition:
+            ret += f"{s*4}end if;\n" \
+                   f"\n"
+        else:
+            ret += f"\n"
+
+    ret += f"{s*2}end case;\n" \
+           f"{s*1}end process;\n" \
+           f"end rtl;\n"
 
     linecnt = len(ret.split('\n'))
     return f"<textarea rows='{linecnt}' cols='80'>{ret}</textarea>"
