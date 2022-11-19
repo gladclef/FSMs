@@ -244,6 +244,7 @@ def populate_graph(table_vals:dict[str,list[list[str]]] = None) -> str:
         p = state_pos[state]
         ret += f"<text x='{p.x}' y='{p.y+5}'>{state}</text>"
     for p1, svals in transition_texts.items():
+        svals = list(filter(lambda s: s.replace("_","") != "", svals))
         y_start = text_height * (len(svals)-1) / 2
         for idx, sval in enumerate(svals):
             p2 = geo.Pxy(p1.x, p1.y - y_start + text_height*idx)
@@ -280,9 +281,9 @@ def populate_code(table_vals:dict[str,list[list[str]]] = None) -> str:
            f"{s*1}signal state_reg, state_next: state_type;\n"
     for transition in transitions:
         if transition != "reset" and transition.replace("_","") != "":
-            ret += f"{s*1}signal {transition}: std_logic;\n" \
-                   f"{s*1}-- other signale declarations\n"
-    ret += f"begin\n" \
+            ret += f"{s*1}signal {transition}: std_logic;\n"
+    ret += f"{s*1}-- other signal declarations\n" \
+           f"begin\n" \
            f"\n" \
            f"{s*1}-- state and data register\n" \
            f"{s*1}process(clk, reset)\n" \
