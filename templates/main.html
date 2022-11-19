@@ -28,7 +28,10 @@
                 <div class="diagram">{{ populate_diagram() | safe }}</div>
                 <div class="saveme">Save/Load: <input type="text" name="saveme_tvals" onchange="saveme_changed()" /></div>
             </div>
-            <div class="inline table">{{ populate_table() | safe }}</div>
+            <div class="inline main">
+                <div class='fsm_name_container'>{{ populate_fsm_name() | safe }}</div>
+                <div class="table">{{ populate_table() | safe }}</div>
+            </div>
             <div class="inline code">{{ populate_code() | safe }}</div>
         </div>
 <!--        <div id="f1">-->

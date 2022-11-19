@@ -6,11 +6,15 @@ import lib.geometry as geo
 
 app = Flask(__name__)
 
-def parse_table(table_vals:list[list[str]] = None, clear_empty:bool = False) -> tuple[list[list[str]], list[str], list[str], dict[str,dict[str,str]]]:
-    if table_vals is None:
+def parse_table(table_vals_in:dict[str,list[list[str]]] = None, clear_empty:bool = False) -> tuple[str, list[list[str]], list[str], list[str], dict[str,dict[str,str]]]:
+    if table_vals_in is None:
         table_vals = [["",     "reset", "start", "is_done"],
                       ["IDLE", "IDLE",  "WORK",  ""],
                       ["WORK", "IDLE",  "",      "IDLE"]]
+        fsm_name = "fsm"
+    else:
+        fsm_name = table_vals_in['fsm_name']
+        table_vals = table_vals_in['table_vals']
 
     # filter the input to only valid characters
     def filter_varname(sval):
@@ -59,10 +63,15 @@ def parse_table(table_vals:list[list[str]] = None, clear_empty:bool = False) -> 
                 if next_state != "":
                     transition_map[state][transition] = next_state
 
-    return table_vals, states, transitions, transition_map
+    return fsm_name, table_vals, states, transitions, transition_map
 
-def populate_table(table_vals:list[list[str]] = None, clear_empty:bool = False) -> str:
-    table_vals, states, transitions, transition_map = parse_table(table_vals, clear_empty)
+def populate_fsm_name(table_vals:dict[str,list[list[str]]] = None) -> str:
+    fsm_name, table_vals, states, transitions, transition_map = parse_table(table_vals)
+    ret = f"<div class='fsm_name_container'>FSM Name: <input type='text' class='fsm_name' value='{fsm_name}' /></div>"
+    return ret
+
+def populate_table(table_vals:dict[str,list[list[str]]] = None, clear_empty:bool = False) -> str:
+    fsm_name, table_vals, states, transitions, transition_map = parse_table(table_vals, clear_empty)
 
     # get dimensions
     width, height = css_get_size("div.table")
@@ -101,8 +110,8 @@ def populate_table(table_vals:list[list[str]] = None, clear_empty:bool = False) 
 
     return ret
 
-def populate_graph(table_vals:list[list[str]] = None) -> str:
-    table_vals, states, transitions, transition_map = parse_table(table_vals)
+def populate_graph(table_vals:dict[str,list[list[str]]] = None) -> str:
+    fsm_name, table_vals, states, transitions, transition_map = parse_table(table_vals)
     states = list(filter(lambda s: s != "", states))
 
     # get some dimensions
@@ -243,9 +252,9 @@ def populate_graph(table_vals:list[list[str]] = None) -> str:
     ret += "</svg>"
     return ret
 
-def populate_code(table_vals:list[list[str]] = None) -> str:
+def populate_code(table_vals:dict[str,list[list[str]]] = None) -> str:
     table_vals_str = str(table_vals)
-    table_vals, states, transitions, transition_map = parse_table(table_vals)
+    fsm_name, table_vals, states, transitions, transition_map = parse_table(table_vals)
     s = "   "
 
     ret = f"-----------------------------------------------------------\n" \
@@ -257,19 +266,22 @@ def populate_code(table_vals:list[list[str]] = None) -> str:
           f"use IEEE.STD_LOGIC_1164.ALL;\n" \
           f"use IEEE.NUMERIC_STD.ALL;\n" \
           f"\n" \
-          f"entity fsm is\n" \
+          f"entity {fsm_name} is\n" \
           f"{s*1}Port (\n" \
           f"{s*2}reset : in std_logic;\n" \
           f"{s*2}clk : in std_logic\n" \
           f"{s*1});\n" \
-          f"end fsm;\n" \
+          f"end {fsm_name};\n" \
           f"\n" \
-          f"architecture rtl of fsm is\n"
+          f"architecture rtl of {fsm_name} is\n"
     ret += f"{s*1}type state_type is ({', '.join(states)});\n" \
+           f"{s*1}-- other type declarations\n" \
+           f"\n" \
            f"{s*1}signal state_reg, state_next: state_type;\n"
     for transition in transitions:
         if transition != "reset" and transition.replace("_","") != "":
-            ret += f"{s*1}signal {transition}: std_logic;\n"
+            ret += f"{s*1}signal {transition}: std_logic;\n" \
+                   f"{s*1}-- other signale declarations\n"
     ret += f"begin\n" \
            f"\n" \
            f"{s*1}-- state and data register\n" \
@@ -290,7 +302,8 @@ def populate_code(table_vals:list[list[str]] = None) -> str:
            f"{s*2}case state_reg is\n"
 
     for state in states:
-        ret += f"{s*3}when {state} =>\n"
+        ret += f"{s*3}when {state} =>\n" \
+               f"{s*4}-- state logic\n"
         first_transition = True
         for transition, state_next in transition_map[state].items():
             if transition.replace("_", "") != "":
@@ -316,32 +329,39 @@ def populate_code(table_vals:list[list[str]] = None) -> str:
     linecnt = len(ret.split('\n'))
     return f"<textarea rows='{linecnt}' cols='80'>{ret}</textarea>"
 
+@app.route('/update_fsm_name', methods=['POST'])
+def update_fsm_name():
+    if request.method == 'POST':
+        inputs = request.json['inputs']
+        fsm_name_str = populate_fsm_name(inputs)
+        return jsonify(fsm_name_str)
+
 @app.route('/update_table', methods=['POST'])
 def update_table():
     if request.method == 'POST':
-        table_vals = request.json['table_vals']
+        inputs = request.json['inputs']
         clear_emtpy = request.json['clear_emtpy']
-        table_str = populate_table(table_vals, clear_emtpy)
+        table_str = populate_table(inputs, clear_emtpy)
         return jsonify(table_str)
 
 @app.route('/update_graph', methods=['POST'])
 def update_graph():
     if request.method == 'POST':
-        table_vals = request.json['table_vals']
-        graph_str = populate_graph(table_vals)
+        inputs = request.json['inputs']
+        graph_str = populate_graph(inputs)
         return jsonify(graph_str)
 
 @app.route('/update_code', methods=['POST'])
 def update_code():
     if request.method == 'POST':
-        table_vals = request.json['table_vals']
-        graph_str = populate_code(table_vals)
+        inputs = request.json['inputs']
+        graph_str = populate_code(inputs)
         return jsonify(graph_str)
 
 @app.route('/', methods=['GET'])
 def login():
     if request.method == 'GET':
-        return render_template('main.html', populate_table=populate_table, populate_diagram=populate_graph, populate_code=populate_code)
+        return render_template('main.html', populate_fsm_name=populate_fsm_name, populate_table=populate_table, populate_diagram=populate_graph, populate_code=populate_code)
 
 if __name__ == '__main__':
     app.run(debug=True)
