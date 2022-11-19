@@ -257,48 +257,48 @@ def populate_code(table_vals:list[list[str]] = None) -> str:
           "use IEEE.NUMERIC_STD.ALL;\n" \
           "\n" \
           "entity fsm is\n" \
-          "    Port (\n" \
-          "        reset : in STD_LOGIC;\n" \
-          "        clk : in STD_LOGIC\n" \
-          "    );\n" \
+          "   Port (\n" \
+          "      reset : in std_logic;\n" \
+          "      clk : in std_logic\n" \
+          "   );\n" \
           "end fsm;\n" \
           "\n" \
           "architecture rtl of fsm is\n"
-    ret += f"    type state_type is ({', '.join(states)});\n" \
-           f"    signal state_reg, state_next: state_type;\n"
+    ret += f"   type state_type is ({', '.join(states)});\n" \
+           f"   signal state_reg, state_next: state_type;\n"
     for transition in transitions:
         if transition != "reset":
-            ret += f"    signal {transition}: STD_LOGIC;\n"
+            ret += f"   signal {transition}: std_logic;\n"
     ret += "begin\n" \
            "\n" \
-           "    -- state and data register\n" \
-           "    process(clk, reset)\n" \
-           "    begin\n" \
-           "        if (reset = '1') then\n" \
-           f"            state_reg <= {states[0]};\n" \
-           "        elsif (rising_edge(clk)) then\n" \
-           "            state_reg <= state_next;\n" \
-           "        end if;\n" \
-           "    end process;\n" \
+           "   -- state and data register\n" \
+           "   process(clk, reset)\n" \
+           "   begin\n" \
+           "      if (reset = '1') then\n" \
+           f"         state_reg <= {states[0]};\n" \
+           "      elsif (rising_edge(clk)) then\n" \
+           "         state_reg <= state_next;\n" \
+           "      end if;\n" \
+           "   end process;\n" \
            "\n" \
-           "    -- combinational circuit\n" \
-           f"    process(state_reg, {', '.join(transitions)})\n" \
-           "    begin\n" \
-           "        state_next <= state_reg;\n" \
+           "   -- combinational circuit\n" \
+           f"   process(state_reg, {', '.join(transitions)})\n" \
+           "   begin\n" \
+           "      state_next <= state_reg;\n" \
            "\n" \
-           "        case state_reg is\n"
+           "      case state_reg is\n"
     for state in states:
-        ret += f"            when {state} =>\n"
+        ret += f"         when {state} =>\n"
         first_transition = True
         for transition, state_next in transition_map[state].items():
             ifstr = "if" if first_transition else "elsif"
-            ret += f"                {ifstr} ({transition} = '1') then\n" \
-                   f"                    state_next <= {state_next};\n"
+            ret += f"            {ifstr} ({transition} = '1') then\n" \
+                   f"               state_next <= {state_next};\n"
             first_transition = False
-        ret += "                end if;\n" \
+        ret += "            end if;\n" \
                "\n"
-    ret += "        end case;\n" \
-           "    end process;\n" \
+    ret += "      end case;\n" \
+           "   end process;\n" \
            "end rtl;\n"
 
     linecnt = len(ret.split('\n'))
