@@ -72,29 +72,37 @@ def populate_fsm_name(table_vals:dict[str,list[list[str]]] = None) -> str:
 
 def populate_table(table_vals:dict[str,list[list[str]]] = None, clear_empty:bool = False) -> str:
     fsm_name, table_vals, states, transitions, transition_map = parse_table(table_vals, clear_empty)
+    ret = ""
 
     # get dimensions
     width, height = css_get_size("div.table")
     symw, symh = css_get_size("div.table .sym")
-    cwidth = max(120, min(200, math.floor((width-3*symw-20) / (len(transitions)+1) )))
+    symplusw, symplush = css_get_size("div.table .sym.plus")
+    cwidth = max(120, min(200, math.floor((width-2*symw-symplusw-20) / (len(transitions)+1) )))
     rheight = max(20, min(40, height / (len(states)+2) ))
-    style = f"style='width: {cwidth}px; height: {rheight}px'"
-    row_style = f"style='width: {cwidth*(len(transitions)+1) + symw*3}px'"
+    column_style = f"style='width: {cwidth}px'"
+    cell_style   = f"style='width: {cwidth}px; height: {rheight}px'"
+    row_style    = f"style='width: {cwidth*(len(transitions)+1) + symw*2 + symplusw}px'"
 
     # build the table
     def cell(txt, row_idx, col_idx, *classes):
         sclasses = " ".join(classes)
-        return f"<input type='text' class='tcell {sclasses}' {style} name='{row_idx}_{col_idx}' value='{txt}' />"
-    def syms(row_index):
+        return f"<input type='text' class='tcell {sclasses}' {cell_style} name='{row_idx}_{col_idx}' value='{txt}' />"
+    def row_syms(row_index):
         return f"<div class='sym up' onclick='row_up({row_index})'>▲</div>" + \
                f"<div class='sym down' onclick='row_down({row_index})'>▼</div>" + \
                f"<div class='sym plus' onclick='row_plus({row_index})'>➕</div>"
+    def col_syms(col_index):
+        return f"<div class='sym left' onclick='col_left({col_index})'>◀</div>" + \
+               f"<div class='sym plus' onclick='col_plus({col_index})'>➕</div>" + \
+               f"<div class='sym right' onclick='col_right({col_index})'>▶</div>"
     # ... header
-    ret = f"<div class='row' {row_style}><div class='tcell header' {style}></div>"
+    header_row = f"<div class='row' {row_style}><div class='tcell header' {cell_style}></div>"
     for col_idx in range(len(transitions)):
         transition = transitions[col_idx]
-        ret += cell(transition, 0, col_idx+1, 'header')
-    ret += "<div class='sym plus' onclick='col_plus()'>➕</div></div>"
+        header_row += cell(transition, 0, col_idx+1, 'header')
+    header_row += "</div>"
+    ret += header_row
     # ... body
     for row_idx in range(len(states)):
         state = states[row_idx]
@@ -104,8 +112,13 @@ def populate_table(table_vals:dict[str,list[list[str]]] = None, clear_empty:bool
             transition = transitions[col_idx]
             next_state = "" if (transition not in state_transitions) else state_transitions[transition]
             row += cell(next_state, row_idx+1, col_idx+1)
-        ret += row + syms(row_idx) + "</div>"
+        ret += row + row_syms(row_idx) + "</div>"
     # ... footer
+    adjustements_row = f"<div class='col_adjustments' {row_style}><div {column_style}></div>"
+    for col_idx in range(len(transitions)):
+        adjustements_row += f"<div {column_style}>" + col_syms(col_idx+1) + "</div>"
+    adjustements_row += "</div>"
+    ret += adjustements_row
     ret += "<div><input type='button' name='update' value='Update' /><input type='button' name='update_and_clear' value='Clear Empty'></div>"
 
     return ret
@@ -256,6 +269,8 @@ def populate_graph(table_vals:dict[str,list[list[str]]] = None) -> str:
 def populate_code(table_vals:dict[str,list[list[str]]] = None) -> str:
     table_vals_str = str(table_vals)
     fsm_name, table_vals, states, transitions, transition_map = parse_table(table_vals)
+    transition_empty = lambda s: s.replace("_","") == ""
+    nonempty_transitions = list(filter(lambda s: not transition_empty(s), transitions))
     s = "   "
 
     ret = f"-----------------------------------------------------------\n" \
@@ -279,8 +294,8 @@ def populate_code(table_vals:dict[str,list[list[str]]] = None) -> str:
            f"{s*1}-- other type declarations\n" \
            f"\n" \
            f"{s*1}signal state_reg, state_next: state_type;\n"
-    for transition in transitions:
-        if transition != "reset" and transition.replace("_","") != "":
+    for transition in nonempty_transitions:
+        if transition != "reset":
             ret += f"{s*1}signal {transition}: std_logic;\n"
     ret += f"{s*1}-- other signal declarations\n" \
            f"begin\n" \
@@ -296,7 +311,7 @@ def populate_code(table_vals:dict[str,list[list[str]]] = None) -> str:
            f"{s*1}end process;\n" \
            f"\n" \
            f"{s*1}-- combinational circuit\n" \
-           f"{s*1}process(state_reg, {', '.join(transitions)})\n" \
+           f"{s*1}process(state_reg, {', '.join(nonempty_transitions)})\n" \
            f"{s*1}begin\n" \
            f"{s*2}state_next <= state_reg;\n" \
            f"\n" \
@@ -307,7 +322,7 @@ def populate_code(table_vals:dict[str,list[list[str]]] = None) -> str:
                f"{s*4}-- state logic\n"
         first_transition = True
         for transition, state_next in transition_map[state].items():
-            if transition.replace("_", "") != "":
+            if not transition_empty(transition):
                 ifstr = "if" if first_transition else "elsif"
                 ret += f"{s*4}{ifstr} ({transition} = '1') then\n" \
                        f"{s*5}state_next <= {state_next};\n"

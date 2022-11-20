@@ -189,10 +189,36 @@ function row_plus(idx) {
     _update(get_inputs(table_vals), false);
 }
 
-function col_plus() {
+function col_left(idx) {
+    if (idx === 0) { return; }
     table_vals = get_table_vals();
     for (var r = 0; r < table_vals.length; r++) {
-        table_vals[r].push("");
+        row = table_vals[r];
+        prev_cell = row[idx-1];
+        curr_cell = row[idx];
+        row.splice(idx-1, 2, curr_cell, prev_cell);
+        table_vals[r] = row;
+    }
+    _update(get_inputs(table_vals), false);
+}
+
+function col_right(idx) {
+    table_vals = get_table_vals();
+    if (idx === table_vals[0].length-1) { return; }
+    for (var r = 0; r < table_vals.length; r++) {
+        row = table_vals[r];
+        curr_cell = row[idx];
+        next_cell = row[idx+1];
+        row.splice(idx, 2, next_cell, curr_cell);
+        table_vals[r] = row;
+    }
+    _update(get_inputs(table_vals), false);
+}
+
+function col_plus(idx) {
+    table_vals = get_table_vals();
+    for (var r = 0; r < table_vals.length; r++) {
+        table_vals[r].splice(idx+1, 0, "");
     }
     _update(get_inputs(table_vals), false);
 }

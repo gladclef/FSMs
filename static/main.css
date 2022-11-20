@@ -36,6 +36,9 @@ div.diagram circle.arc {
     fill: transparent;
 }
 
+div.main {
+    vertical-align: top;
+}
 div.table {
     vertical-align: top;
     width: 800px;
@@ -61,6 +64,15 @@ div.table .sym {
     display: inline-block;
     font-size: 20px;
     cursor: pointer;
+}
+div.table .sym.plus {
+    width: 30px;
+}
+div.table .col_adjustments {
+    display: inline-block;
+}
+div.table .col_adjustments div {
+    display: inline-block;
 }
 
 div.code {
