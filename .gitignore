@@ -1,1 +1,6 @@
+# python files
 __pycache__
+
+# pycharm files
+/shelf/
+/workspace.xml
