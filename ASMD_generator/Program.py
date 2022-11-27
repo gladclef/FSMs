@@ -1,17 +1,19 @@
 import re
+import sys
 from typing import Optional, Union
 
-re_proc = re.compile(r"^\s*process\s*\(")
-re_endproc = re.compile(r"^\s*end\s+process\s*;")
-re_sequential = re.compile(r"^\s*process\s*\(\s*(clk|reset)\s*,\s*(clk|reset)\s*\)\s*$")
-re_case_state_machine = re.compile(r"^\s*case\s+state_reg\s+is")
-re_state = re.compile(r"^\s*when ([A-Za-z_][A-Za-z0-9_]+)\s*=>")
-re_end_case = re.compile(r"^\s*end\s+case\s*;")
-re_if = re.compile(r"^\s*if\s+\((.*)\)\s*then")
-re_else = re.compile(r"^\s*else")
-re_elsif = re.compile(r"^\s*elsif (.*)\s*then")
-re_endif = re.compile(r"^\s*end\s+if;")
-re_state_next = re.compile(r"^\s*state_next\s*<=\s*([A-Za-z_][A-Za-z0-9_]*)")
+re_entity = re.compile(r"^\s*entity\s+([A-Za-z_][A-Za-z0-9_]+)\s+is\s*$", re.IGNORECASE)
+re_proc = re.compile(r"^\s*process\s*\(", re.IGNORECASE)
+re_endproc = re.compile(r"^\s*end\s+process\s*;", re.IGNORECASE)
+re_sequential = re.compile(r"^\s*process\s*\(\s*(clk|reset)\s*,\s*(clk|reset)\s*\)\s*$", re.IGNORECASE)
+re_case_state_machine = re.compile(r"^\s*case\s+state_reg\s+is", re.IGNORECASE)
+re_state = re.compile(r"^\s*when ([A-Za-z_][A-Za-z0-9_]+)\s*=>", re.IGNORECASE)
+re_end_case = re.compile(r"^\s*end\s+case\s*;", re.IGNORECASE)
+re_if = re.compile(r"^\s*if\s+\((.*)\)\s*then", re.IGNORECASE)
+re_else = re.compile(r"^\s*else", re.IGNORECASE)
+re_elsif = re.compile(r"^\s*elsif\s*\((.*)\)\s*then", re.IGNORECASE)
+re_endif = re.compile(r"^\s*end\s+if;", re.IGNORECASE)
+re_state_next = re.compile(r"^\s*state_next\s*<=\s*([A-Za-z_][A-Za-z0-9_]*)", re.IGNORECASE)
 
 _states_by_name: dict[str, any] = {}
 
@@ -48,7 +50,7 @@ class SVal:
 
 class StateMachine:
     def __init__(self, parent: Optional['StateMachine']):
-        self.parent: Optional[Union['Conditional','State']] = parent
+        self.parent: Optional[Union['Conditional', 'State']] = parent
         self.next_states: dict[str, Optional['State']] = {}
 
     def get_states(self) -> dict[str, 'State']:
@@ -72,9 +74,9 @@ class StateMachine:
 class Content(StateMachine):
     def __init__(self, parent: Optional[Union['Conditional', 'State']]):
         super().__init__(parent)
-        self.contents: list[Union[SVal,'Conditional']] = []
+        self.contents: list[Union[SVal, 'Conditional']] = []
 
-    def append(self, static_or_conditional: Union[str,'Conditional']) -> 'Content':
+    def append(self, static_or_conditional: Union[str, 'Conditional']) -> 'Content':
         if isinstance(static_or_conditional, Conditional):
             conditional: Conditional = static_or_conditional
 
@@ -101,15 +103,19 @@ class Content(StateMachine):
         return self
 
     def print(self, indent: int):
+        ret = ""
         sindent: str = "   " * indent
         for content in self.contents:
+            if ret != "":
+                ret += "\n"
             if content.is_conditional():
                 conditional: Conditional = content
-                conditional.print(indent)
+                ret += conditional.print(indent)
             else:
                 static: SVal = content
                 lines = [l.strip() for l in static.orig_strval.splitlines()]
-                print(sindent + ("\n"+sindent).join( lines ))
+                ret += sindent + ("\n" + sindent).join(lines)
+        return ret
 
     def __add__(self, other):
         if isinstance(other, str) or isinstance(other, Conditional) or isinstance(other, SVal):
@@ -130,17 +136,17 @@ class Conditional(StateMachine):
     def is_conditional(self):
         return True
 
-    def append(self, val: Union[str,'Conditional']) -> 'Conditional':
+    def append(self, val: Union[str, 'Conditional']) -> 'Conditional':
         if self.has_false():
             self.append_falseval(val)
         else:
             self.append_trueval(val)
         return self
 
-    def append_trueval(self, trueval: Union[str,'Conditional']):
+    def append_trueval(self, trueval: Union[str, 'Conditional']):
         self.trueval += trueval
 
-    def append_falseval(self, falseval: Union[str,'Conditional']):
+    def append_falseval(self, falseval: Union[str, 'Conditional']):
         if not self.has_false():
             self.falseval = Content(self)
         self.falseval += falseval
@@ -161,21 +167,22 @@ class Conditional(StateMachine):
         return self.falseval
 
     def print(self, indent: int):
-        sindent = "   "*indent
+        sindent = "   " * indent
         if self.is_elsif:
-            print(f"{sindent}elsif ({self.condition}) then")
+            ret = f"{sindent}elsif ({self.condition}) then\n"
         else:
-            print(f"{sindent}if ({self.condition}) then")
-        self.trueval.print(indent+1)
+            ret = f"{sindent}if ({self.condition}) then\n"
+        ret += self.trueval.print(indent + 1) + "\n"
 
         if self.has_elsif():
-            self.elsifval.print(indent)
+            ret += self.elsifval.print(indent)
         elif self.has_false():
-            print(f"{sindent}else")
-            self.falseval.print(indent+1)
-            print(f"{sindent}end if;")
+            ret += f"{sindent}else\n"
+            ret += self.falseval.print(indent + 1) + "\n"
+            ret += f"{sindent}end if;"
         else:
-            print(f"{sindent}end if;")
+            ret += f"{sindent}end if;"
+        return ret
 
     def __add__(self, other):
         if isinstance(other, str) or isinstance(other, Conditional) or isinstance(other, SVal):
@@ -200,21 +207,39 @@ class State(Content):
             return None
         return _states_by_name[state_name]
 
+    def get_transition_conditions(self) -> list[str]:
+        ret = []
+        next_transition = "__" # TODO get the actual transition strings
+        for state_name, state in self.next_states.items():
+            ret.append(next_transition)
+            next_transition += "_"
+        return ret
+
+    def get_transitions(self, transition_conditions) -> list[str]:
+        ret = list(self.next_states.keys())
+        for i in range(len(ret)+1, len(transition_conditions)+1):
+            ret.append("")
+        return ret
+
     def print(self, indent):
-        sindent = "   "*indent
-        print(f"{sindent}when {self.name} =>")
-        super().print(indent+1)
+        sindent = "   " * indent
+        ret = f"{sindent}when {self.name} =>\n"
+        ret += super().print(indent + 1)
+        return ret
 
 
 class Program():
     def __init__(self, filename: str):
-        self.states: dict[str,State] = {}
+        self.states: dict[str, State] = {}
+        self.entity_name = "FSM"
 
         with open(filename, "r") as fin:
 
             # process all the lines in the first combination process to
             lineno = 1
             dval: dict[str:any] = {
+                "entity_declared": False,
+                "entity_name": "",
                 "in_proc": False,
                 "in_combinational": False,
                 "in_state_machine": False,
@@ -222,23 +247,33 @@ class Program():
                 "conditional": None,
             }
             for line in fin:
-                done = self._process_combination(line, lineno, dval)
-                lineno += 1
+                try:
+                    done, state = self._process_combination(line, lineno, dval)
+                except Exception:
+                    print(f"Error encountered while processing line {lineno}:\n\"{line}\"", file=sys.stderr)
+                    raise
+                if state is not None:
+                    self.states[state.name] = state
 
+                lineno += 1
                 if done:
-                    self.states = State.get_states()
+                    if dval["entity_declared"]:
+                        self.entity_name = dval["entity_name"]
                     break
 
-    def _process_combination(self, line, lineno, dval):
-        lline = line.lower().lstrip()
+    def _process_combination(self, line: str, lineno: int, dval: dict[str:any]) -> tuple[bool, Optional[State]]:
+        curr_state: State = dval["state"]
+        sline = line.lstrip()
+        if sline == "":
+            sline = line
 
-        if re_proc.match(lline):
+        if re_proc.match(sline):
             dval["in_proc"] = True
-            if re_sequential.match(lline) is None:
+            if re_sequential.match(sline) is None:
                 dval["in_combinational"] = True
-        elif re_endproc.match(lline):
+        elif re_endproc.match(sline):
             if dval["in_combinational"]:
-                return True
+                return True, curr_state
             dval["in_state_machine"] = False
             dval["state"] = None
             dval["conditional"] = None
@@ -246,16 +281,16 @@ class Program():
             dval["in_combinational"] = False
         elif dval["in_combinational"]:
             if dval["in_state_machine"]:
-                m_if = re_if.match(lline)
-                m_else = re_else.match(lline)
-                m_elsif = re_elsif.match(lline)
-                m_endif = re_endif.match(lline)
-                m_state = re_state.match(lline)
-                m_end_case = re_end_case.match(lline)
+                m_if = re_if.match(sline)
+                m_else = re_else.match(sline)
+                m_elsif = re_elsif.match(sline)
+                m_endif = re_endif.match(sline)
+                m_state = re_state.match(sline)
+                m_end_case = re_end_case.match(sline)
 
                 def get_conditional() -> Conditional:
                     if dval["conditional"] is None:
-                        raise RuntimeError('Error at line '+lineno+'. Not in a conditional! '+line.strip())
+                        raise RuntimeError('Error at line ' + lineno + '. Not in a conditional! ' + line.strip())
                     return dval["conditional"]
 
                 def append_lineval(lineval: str | Conditional):
@@ -263,56 +298,83 @@ class Program():
                         conditional: Conditional = dval["conditional"]
                         conditional += lineval
                     else:
-                        state: State = dval["state"]
-                        state += lineval
+                        if dval["state"] is not None:
+                            dval["state"] += lineval
 
                     if isinstance(lineval, Conditional):
                         dval["conditional"] = lineval
 
                 if m_if:
-                    parent = dval["state"] if (dval["conditional"] is None) else dval["conditional"]
+                    parent = curr_state if (dval["conditional"] is None) else dval["conditional"]
                     append_lineval(Conditional(parent, m_if.groups()[0]))
                 elif m_else:
-                    conditional:Conditional = get_conditional()
+                    conditional: Conditional = get_conditional()
                     conditional.append_falseval("")
                 elif m_elsif:
-                    conditional:Conditional = get_conditional()
+                    conditional: Conditional = get_conditional()
                     elsifval = Conditional(conditional.parent, m_elsif.groups()[0], is_elsif=True)
                     conditional.append_elsifval(elsifval)
                     dval["conditional"] = elsifval
                 elif m_endif:
-                    conditional:Conditional = get_conditional()
+                    conditional: Conditional = get_conditional()
                     parent = conditional.parent
                     dval["conditional"] = parent if (isinstance(parent, Conditional)) else None
                 elif m_state:
                     dval["state"] = State(m_state.groups()[0])
+                    return False, curr_state
                 elif m_end_case:
                     dval["in_state_machine"] = False
                     dval["state"] = None
                     dval["conditional"] = None
                     dval["in_proc"] = False
                     dval["in_combinational"] = False
-                    return True
+                    return True, curr_state
                 else:
-                    append_lineval(line)
+                    append_lineval(sline)
 
-            else: # if dval["in_state_machine"]
-                m_case_state_machine = re_case_state_machine.match(lline)
+            else:  # if dval["in_state_machine"]
+                m_case_state_machine = re_case_state_machine.match(sline)
 
                 if m_case_state_machine:
                     dval["in_state_machine"] = True
-
+        elif re_entity.match(sline):
+            if not dval["entity_declared"]:
+                dval["entity_name"] = re_entity.match(sline).groups()[0]
+            dval["entity_declared"] = True
         else:
             pass
 
-        return False
+        return False, None
 
-    def print(self, indent: int = 0):
+    def get_fsm_table(self) -> str:
+        ret = "{'fsm_name': '" + self.entity_name + "', 'table_vals': ["
+        state_strs: list[str] = []
+        transition_conditions: list[str] = []
+
         for state_name, state in self.states.items():
-            state.print(0)
+            transition_conditions += state.get_transition_conditions()
+        transition_conditions = list(sorted(set(transition_conditions)))
+        for state_name, state in self.states.items():
+            state_strs.append("'" + state_name + "', '" + "', '".join(state.get_transitions(transition_conditions)) + "'")
+
+        print(transition_conditions)
+        ret += "['', '" + "', '".join(transition_conditions) + "'], "
+        ret += "[" + "], [".join(state_strs) + "]"
+        ret += "]}"
+
+        return ret
+
+    def print(self, indent: int = 0) -> str:
+        ret = ""
+        for state_name, state in self.states.items():
+            if ret != "":
+                ret += "\n"
+            ret += state.print(indent)
+        return ret
+
 
 if __name__ == "__main__":
-    program = Program("C:/Users/gladc/Documents/School/UNM/ECE_595_intermediate_logic_design/project/vhdl/RenderText.vhd")
+    program = Program("C:/Users/gladc/Documents/School/UNM/ECE_522_codesign/current_lab/vhdl/Histo.vhd")
 
     stats = {
         "n_states": 0,
@@ -330,12 +392,14 @@ if __name__ == "__main__":
             elif conditional.has_false():
                 process_contents(conditional.falseval)
 
+
         def process_contents(container: Content):
             for content in container.contents:
                 if content.is_conditional():
                     process_conditional(content)
                 else:
                     stats["n_statics"] += 1
+
 
         stats["n_states"] += 1
         stats["n_next_states"] += len(state.next_states)

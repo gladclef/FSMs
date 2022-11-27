@@ -1,11 +1,12 @@
-from PIL import Image
+import pyperclip
 
 from Program import Program
 
 if __name__ == "__main__":
-    program = Program("C:/Users/gladc/Documents/School/UNM/ECE_595_intermediate_logic_design/project/vhdl/RenderText.vhd")
-    program.print(0)
+    program = Program("C:/Users/gladc/Documents/School/UNM/ECE_522_codesign/current_lab/vhdl/Histo.vhd")
+    sval = program.print(3)
+    pyperclip.copy(sval)
 
-    # img = Image.new( 'RGB', (255,255), "white") # Create a new black image
-    # pixels = img.load() # Create the pixel map
-    # img.show()
+    fsm_str = program.get_fsm_table()
+    print(fsm_str)
+    pyperclip.copy(fsm_str)
