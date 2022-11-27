@@ -1,8 +1,8 @@
 import math
 from flask import Flask, redirect, url_for, request, render_template, jsonify
 
-from lib.css import *
-import lib.geometry as geo
+from FSMs.lib.css import *
+import FSMs.lib.geometry as geo
 
 app = Flask(__name__)
 
