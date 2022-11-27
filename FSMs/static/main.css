@@ -23,7 +23,7 @@ div.diagram text {
     text-anchor: middle;
 }
 div.diagram circle {
-    fill: dodgerblue;
+    fill: skyblue;
 }
 div.diagram path {
     stroke: black;
