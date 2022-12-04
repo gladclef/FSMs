@@ -32,17 +32,21 @@ def parse_table(table_vals_in:dict[str,list[list[str]]] = None, clear_empty:bool
     # filter out empty rows and columns
     if clear_empty:
         new_table_vals = []
+
+        # clear empty rows
         for row in table_vals:
             if any(filter(lambda s: s != "", row)):
                 new_table_vals.append(row)
         if len(new_table_vals) == 0:
-            return [], [], [], {}
-        for col_idx in range(len(new_table_vals[0])):
-            found = False
+            return fsm_name, [], [], [], {}
+
+        # clear empty columns
+        for col_idx in range(len(new_table_vals[0])-1, -1, -1):
             col_vals = [row[col_idx] for row in new_table_vals]
             if not any(filter(lambda s: s != "", col_vals)):
                 for row in new_table_vals:
                     del row[col_idx]
+
         table_vals = new_table_vals
 
     # extract the states and transitions
