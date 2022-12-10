@@ -344,7 +344,22 @@ def populate_code(table_vals:dict[str,list[list[str]]] = None) -> str:
 
     ret += f"{s*2}end case;\n" \
            f"{s*1}end process;\n" \
-           f"end rtl;\n"
+           f"\n"
+
+    i = 0
+    state_nb = math.ceil(math.log2(len(states)))
+    align_space = " "*7
+    for i, state in enumerate(states):
+        if i == 0:
+            ret += f"{s*1}-- dbg <= \"{'0'*state_nb}\" when state_reg = {state} else\n"
+            continue
+        bits = ("{0:0"+str(state_nb)+"b}").format(i)
+        ret += f"{s*1}-- {align_space}\"{bits}\" when state_reg = {state} else\n"
+    bits = ("{0:0"+str(state_nb)+"b}").format( 2**state_nb-1 )
+    ret += f"{s*1}-- {align_space}\"{bits}\";\n" \
+           "\n"
+
+    ret += f"end rtl;\n"
 
     linecnt = len(ret.split('\n'))
     return f"<textarea rows='{linecnt}' cols='80'>{ret}</textarea>"
