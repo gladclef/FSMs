@@ -11,8 +11,8 @@ def get_mod_time(fname, default=0):
         return default
 
 if __name__ == "__main__":
-    file_a_name = "C:/Users/gladc/Documents/School/UNM/ECE_522_codesign/current_lab/vitis/current_lab/Debug/current_lab.elf"
-    file_b_name = "C:/Users/gladc/Documents/School/UNM/ECE_522_codesign/current_lab/exports/current_lab.elf"
+    file_a_name = "C:/Users/gladc/Documents/School/UNM/ECE_522_codesign/project/vitis/KMeans/Debug/KMeans.elf"
+    file_b_name = "C:/Users/gladc/Documents/School/UNM/ECE_522_codesign/project/BITSTREAMS/current_lab.elf"
     last_mod_time = get_mod_time(file_a_name)
 
     while True:
