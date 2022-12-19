@@ -16,7 +16,13 @@ if __name__ == "__main__":
         [ "C:/Users/gladc/Documents/School/UNM/ECE_522_codesign/project/vitis/KMeans/Debug/KMeans.elf",
           "C:/Users/gladc/Documents/School/UNM/ECE_522_codesign/project/BITSTREAMS/current_lab.elf" ],
         [ "C:/Users/gladc/Documents/School/UNM/ECE_522_codesign/project/BITSTREAMS/design_1_wrapper.xsa",
-          None ]
+          None ],
+        [ "C:/Users/gladc/Documents/School/UNM/ECE_522_codesign/project/C_code/c_algo.c",
+          "C:/Users/gladc/Documents/School/UNM/ECE_522_codesign/project/vitis/KMeans/src/c_algo.c" ],
+        [ "C:/Users/gladc/Documents/School/UNM/ECE_522_codesign/project/C_code/c_algo.h",
+          "C:/Users/gladc/Documents/School/UNM/ECE_522_codesign/project/vitis/KMeans/src/c_algo.h" ],
+        [ "C:/Users/gladc/Documents/School/UNM/ECE_522_codesign/project/C_code/kmeans_codesign_starter.c",
+          "C:/Users/gladc/Documents/School/UNM/ECE_522_codesign/project/vitis/KMeans/src/kmeans_codesign_starter.c" ]
     ]
     last_mod_times = [0 for fp in file_pairs]
 
